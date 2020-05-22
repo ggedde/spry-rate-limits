@@ -71,9 +71,78 @@ Setting | Type | Default | Description
 -------|--------|-------------|-----------
 limit | Number | 0 | Number of allowed requests
 within | Number | 0 | Time in Seconds to allow.
-by | String | '' | Key used to identify the request. By default SpryRateLimits only supports `ip`. However, you can hook into this field and filter it with your own value. ex.  `account_id` or `user_id`. See below for more details.
+by | String | 'ip' | Key used to identify the request. By default SpryRateLimits only supports `ip`. However, you can hook into this field and filter it with your own value. ex.  `account_id` or `user_id`. See below for more details.
 hook | String | 'setRoute' | When to run this Rate limiit. This uses Spry Hooks See ([Spry Lifecycles](https://github.com/ggedde/spry/blob/master/README.md#Lifecycle))
 
+### Adding your own Rate Limit (by) Key
 
+The default `by` key is `ip`, but many times this is not the best case. So you can add your own keys and values and filter the rate limit to change the value being checked.
 
+```php
+Spry::addFilter('spryRateLimitKeys', function($keys){
+  $keys['my_key'] = 'some_unique_value';
+  return $keys;
+});
+```
 
+Example retriving a value from Srpy's getAuth() method.
+```php
+Spry::addHook('setAuth', function($auth){
+    Spry::addFilter('spryRateLimitKeys', function($keys) use ($auth){
+        $keys['user_id'] = $auth->user_id;
+        $keys['account_id'] = $auth->account_id;
+        return $keys;
+    });
+});
+```
+Extended Component Example
+```php
+Spry::addHook('setAuth', function($auth){
+    Spry::addFilter('spryRateLimitKeys', [__CLASS__, 'myMethod'], $auth);
+});
+...
+public static myMethod($keys, null, $auth) {
+    $keys['user_id'] = $auth->user_id;
+    $keys['account_id'] = $auth->account_id;
+    return $keys;
+}
+...
+```
+
+Using your new key in your Route
+```php
+$config->routes = [
+    '/data/get' => [
+        'label' => 'Get Data',
+        'controller' => 'SomeComponent::get',
+        'access' => 'public',
+        'methods' => 'GET',
+        'limits' => [
+            'limit' => 15,
+            'within' => 15,
+            'by' => 'user_id'
+        ],
+        'params' => [
+            'id' => [
+                'type' => 'string',
+            ],
+        ],
+    ],
+    '/users/get' => [
+        'label' => 'Get User',
+        'controller' => 'SomeUserComponent::get',
+        'access' => 'public',
+        'methods' => 'GET',
+        'limits' => [
+            'limit' => 1,
+            'within' => 1,
+            'by' => 'account_id'
+        ],
+        'params' => [
+            'id' => [
+                'type' => 'string',
+            ],
+        ],
+    ],
+];
+```
