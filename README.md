@@ -1,5 +1,5 @@
 # Spry Rate Limits
-This is a Spry Provider for adding Rate Limits to your Routes
+This is a Spry Provider for adding Rate Limits to your Routes or a global Rate Limit for all requests
 
 In order to activate Rate Limits you need to initialze the Provider within your config and set the Rate Limit settings within your Config.  
 
