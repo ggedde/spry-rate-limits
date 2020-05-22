@@ -97,16 +97,19 @@ Spry::addHook('setAuth', function($auth){
 ```
 Extended Component Example
 ```php
-Spry::addHook('setAuth', function($auth){
-    Spry::addFilter('spryRateLimitKeys', [__CLASS__, 'myMethod'], $auth);
-});
-...
-public static myMethod($keys, null, $auth) {
+public static function setup()
+{
+    Spry::addHook('setAuth', function($auth){
+        Spry::addFilter('spryRateLimitKeys', [__CLASS__, 'myMethod'], $auth);
+    });
+}
+
+public static myMethod($keys, $meta, $auth) 
+{
     $keys['user_id'] = $auth->user_id;
     $keys['account_id'] = $auth->account_id;
     return $keys;
 }
-...
 ```
 
 Using your new key in your Route
