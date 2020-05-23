@@ -66,7 +66,7 @@ Setting | Type | Default | Description
 -------|--------|-------------|-----------
 driver | String | '' | Driver to use to store the Rate Limit History. Currently only `db` and `file` is allowed. `db` uses SpryDB Provider to store the data so you must have SpryDB configured. In the future we plan to add `memcached` and `redis`. When setting the Driver to `db` you will need to make sure the table exists or you can run `spry migrate` to add the database automatically.
 dbTable | String | '' | When Driver is set to `db` you must set a Table to store the rate limit history.
-dbMeta | Array | '' | When Driver is set to `db` you can pass meta data to the DB Provider.
+dbMeta | Array | [] | When Driver is set to `db` you can pass meta data to the DB Provider.
 fileDirectory | String | '' | When Driver is set to `file` you will need to pass a directory to store the files used to track the rate limits.
 default | Array | [] | Default Global Rate Limit settings.
 excludeTests | Boolean | false | Whether to Exclude Tests when checking rate limits. This can be overwritten per route.
