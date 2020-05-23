@@ -6,8 +6,8 @@ In order to activate Rate Limits you need to initialze the Provider within your 
 ### Spry Configuration Example
 ```php
 $config->rateLimits = [
-  'driver' => 'db',
-  'table' => 'rate_limits'
+  'driver' => 'file',
+  'fileDirectory' =>  __DIR__.'/rate_limits',
 ];
 
 Spry::addHook('initialized', 'Spry\\SpryProvider\\SpryRateLimits::initiate');
@@ -20,13 +20,15 @@ Spry::addHook('initialized', 'Spry\\SpryProvider\\SpryRateLimits::initiate');
 
 ```php
 $config->routeRateLimits = [
-  'driver' => 'db',
-  'table' => 'rate_limits',
+  'driver' => 'file',
+  'fileDirectory' => __DIR__.'/rate_limits',
+  'excludeTests' => false,
   'default' => [
+      'by' => 'ip',
       'limit' => 10,
       'within' => 1,
-      'by' => 'ip'
-      'hook' => 'configure'
+      'hook' => 'configure',
+      'excludeTests' => false
   ]
 ];
 ```
@@ -40,9 +42,10 @@ $config->routes = [
         'access' => 'public',
         'methods' => 'POST',
         'limits' => [
+            'by' => 'ip',
             'limit' => 1,
             'within' => 3,
-            'by' => 'ip'
+            'excludeTests' => false
         ],
         'params' => [
             'email' => [
@@ -57,21 +60,25 @@ $config->routes = [
     ],
 ];
 ``` 
-### Settings
+### Global Settings
 
 Setting | Type | Default | Description
 -------|--------|-------------|-----------
-driver | String | '' | Driver to use to store the Rate Limit History. Currently only `db` is allowed. `db` uses SpryDB Provider to store the data so you must have SpryDB configured. In the future we plan to add `files`, `memcached`, `redis`.
-table | String | '' | When Driver is set to `db` you must set a Table to store the rate limit history.
+driver | String | '' | Driver to use to store the Rate Limit History. Currently only `db` and `file` is allowed. `db` uses SpryDB Provider to store the data so you must have SpryDB configured. In the future we plan to add `memcached` and `redis`. When setting the Driver to `db` you will need to make sure the table exists or you can run `spry migrate` to add the database automatically.
+dbTable | String | '' | When Driver is set to `db` you must set a Table to store the rate limit history.
+dbMeta | Array | '' | When Driver is set to `db` you can pass meta data to the DB Provider.
+fileDirectory | String | '' | When Driver is set to `file` you will need to pass a directory to store the files used to track the rate limits.
 default | Array | [] | Default Global Rate Limit settings.
+excludeTests | Boolean | false | Whether to Exclude Tests when checking rate limits. This can be overwritten per route.
 
 ### Rate Limit Settings
 
 Setting | Type | Default | Description
 -------|--------|-------------|-----------
+by | String | 'ip' | Key used to identify the request. By default SpryRateLimits only supports `ip`. However, you can hook into this field and filter it with your own value. ex.  `account_id` or `user_id`. See below for more details.
 limit | Number | 0 | Number of allowed requests
 within | Number | 0 | Time in Seconds to allow.
-by | String | 'ip' | Key used to identify the request. By default SpryRateLimits only supports `ip`. However, you can hook into this field and filter it with your own value. ex.  `account_id` or `user_id`. See below for more details.
+excludeTests | Boolean | false | Whether to Exclude Tests when checking rate limits. If this is not set then the Global excludeTests setting will be applied.
 hook | String | 'setRoute' | When to run this Rate limiit. This uses Spry Hooks See ([Spry Lifecycles](https://github.com/ggedde/spry/blob/master/README.md#Lifecycle))
 
 ### Adding your own Rate Limit (by) Key
