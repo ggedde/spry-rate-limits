@@ -52,7 +52,7 @@ class SpryRateLimits
         }
 
         // Don't run Rate Limits for the cli or any Background Processes
-        if (Spry::isCli() || Spry::isBackgroundProcess()) {
+        if (Spry::isCli() || Spry::isBackgroundProcess() || empty($settings['driver'])) {
             return;
         }
 
@@ -251,7 +251,13 @@ class SpryRateLimits
      */
     private static function getSettings()
     {
-        $settings = Spry::config()->rateLimits;
+        $settings = !empty(Spry::config()->rateLimits) ? Spry::config()->rateLimits : [];
+
+        $settings = array_merge([
+            'driver' => null,
+            'excludeTests' => false,
+            'default' => null
+        ], $settings);
 
         return $settings;
     }
