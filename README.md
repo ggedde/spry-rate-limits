@@ -1,6 +1,10 @@
 # Spry Rate Limits
 This is a Spry Provider for adding Rate Limits to your Routes or a global Rate Limit for all requests
 
+## Installation
+    composer require ggedde/spry-rate-limits
+
+### Activation
 In order to activate Rate Limits you need to initialze the Provider within your config and set the Rate Limit settings within your Config.  
 
 ### Spry Configuration Example
@@ -14,12 +18,12 @@ Spry::addHook('initialized', 'Spry\\SpryProvider\\SpryRateLimits::initiate');
 ```
 <br>
 
-\* *By Default Rate Limits are not active, but you can set a global rate limit by adding the `default` settings to your Spry Config.*
+\* *By Default Rate Limits are not active, but you can set a global rate limit by adding the `default` settings to your Spry Config or by adding limits individually to each route.*
 
 ### Add a Global Rate Limit
 
 ```php
-$config->routeRateLimits = [
+$config->rateLimits = [
   'driver' => 'file',
   'fileDirectory' => __DIR__.'/rate_limits',
   'excludeTests' => false,
