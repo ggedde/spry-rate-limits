@@ -30,21 +30,21 @@ class SpryRateLimits
                 $config->db['schema']['tables'][$settings['dbTable']] = [
                     'columns' => [
                         'key_name' => [
-                            'type' => 'string'
+                            'type' => 'string',
                         ],
                         'key_value' => [
-                            'type' => 'string'
+                            'type' => 'string',
                         ],
                         'path' => [
-                            'type' => 'string'
+                            'type' => 'string',
                         ],
                         'expires' => [
-                            'type' => 'int'
+                            'type' => 'int',
                         ],
                         'current' => [
-                            'type' => 'int'
-                        ]
-                    ]
+                            'type' => 'int',
+                        ],
+                    ],
                 ];
 
                 return $config;
@@ -78,9 +78,12 @@ class SpryRateLimits
      */
     public static function runDefaultRateLimit()
     {
+        $route = Spry::getRoute();
+        $routePath = !empty($route['path']) ? $route['path'] : '_default_';
+        $keys = Spry::runFilter('spryRateLimitKeys', ['ip' => self::getIp()]);
         $settings = self::getSettings();
         if (!empty($settings['default'])) {
-            self::runRateLimit($settings['default'], ['ip' => self::getIp()], $settings, '_default_');
+            self::runRateLimit($settings['default'], $keys, $settings, $routePath);
         }
     }
 
@@ -163,9 +166,9 @@ class SpryRateLimits
                 Spry::stop(72);
             }
 
-            $fileKey = $by . ':' . $keys[$by] . ':' . $routePath;
+            $fileKey = $by.':'.$keys[$by].':'.$routePath;
 
-            $files = glob(rtrim($settings['fileDirectory'], '/') . '/' . $fileKey . '*');
+            $files = glob(rtrim($settings['fileDirectory'], '/').'/'.$fileKey.'*');
 
             if (!empty($files[0])) {
                 $file = $files[0];
@@ -178,7 +181,7 @@ class SpryRateLimits
                     }
                 }
             } else {
-                $file = rtrim($settings['fileDirectory'], '/') . '/' . $fileKey . ':' . $expires;
+                $file = rtrim($settings['fileDirectory'], '/').'/'.$fileKey.':'.$expires;
             }
         }
 
@@ -199,7 +202,7 @@ class SpryRateLimits
         $current++;
 
         if ($current > $limit) {
-            Spry::stop(70, null, null, ['Reset at ' . $expires]);
+            Spry::stop(70, null, null, ['Reset at '.$expires]);
         }
 
         if ($settings['driver'] === 'file' && !empty($settings['fileDirectory']) && $file) {
@@ -221,7 +224,7 @@ class SpryRateLimits
     private static function resetLimits($settings)
     {
         if ($settings['driver'] === 'file' && !empty($settings['fileDirectory']) && is_dir($settings['fileDirectory'])) {
-            $files = glob(rtrim($settings['fileDirectory'], '/') . '/*');
+            $files = glob(rtrim($settings['fileDirectory'], '/').'/*');
 
             if (!empty($files)) {
                 foreach ($files as $file) {
@@ -255,8 +258,9 @@ class SpryRateLimits
 
         $settings = array_merge([
             'driver' => null,
+            'dbMeta' => null,
             'excludeTests' => false,
-            'default' => null
+            'default' => null,
         ], $settings);
 
         return $settings;
