@@ -56,22 +56,14 @@ class SpryRateLimits
             return;
         }
 
-        if ($settings['driver'] === 'db' && !empty($settings['dbTable'])) {
-            $tables = Spry::db()->getTables();
-            if (!empty($tables) && is_array($tables) && !in_array($settings['dbTable'], $tables, true)) {
-                return; // Don't Run until the Table has been built.
-            }
-        }
-
-        self::resetLimits($settings);
-
+        Spry::addHook('configure', [__CLASS__, 'resetLimits']);
         Spry::addHook('setRoute', [__CLASS__, 'runRouteRateLimit']);
 
         if (!empty($settings['default'])) {
             if (!empty($settings['default']['hook'])) {
                 Spry::addHook($settings['default']['hook'], [__CLASS__, 'runDefaultRateLimit']);
             } else {
-                self::runDefaultRateLimit();
+                Spry::addHook('configure', [__CLASS__, 'runDefaultRateLimit']);
             }
         }
     }
@@ -212,15 +204,17 @@ class SpryRateLimits
         }
 
         if ($settings['driver'] === 'db' && !empty($settings['dbTable'])) {
-            $entry = Spry::db($settings['dbMeta'])->get($settings['dbTable'], ['id', 'current', 'expires'], ['key_name' => $by, 'key_value' => $keys[$by], 'path' => $routePath, 'expires[>]' => time()]);
+            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+                $entry = Spry::db($settings['dbMeta'])->get($settings['dbTable'], ['id', 'current', 'expires'], ['key_name' => $by, 'key_value' => $keys[$by], 'path' => $routePath, 'expires[>]' => time()]);
 
-            if (!empty($entry['id'])) {
-                $entryId = $entry['id'];
-                $current = intval($entry['current']);
-                $expires = intval($entry['expires']);
-            } else {
-                if (Spry::db($settings['dbMeta'])->insert($settings['dbTable'], ['key_name' => $by, 'key_value' => $keys[$by], 'path' => $routePath, 'expires' => $expires])) {
-                    $entryId = Spry::db()->id();
+                if (!empty($entry['id'])) {
+                    $entryId = $entry['id'];
+                    $current = intval($entry['current']);
+                    $expires = intval($entry['expires']);
+                } else {
+                    if (Spry::db($settings['dbMeta'])->insert($settings['dbTable'], ['key_name' => $by, 'key_value' => $keys[$by], 'path' => $routePath, 'expires' => $expires])) {
+                        $entryId = Spry::db()->id();
+                    }
                 }
             }
         }
@@ -236,21 +230,23 @@ class SpryRateLimits
         }
 
         if ($settings['driver'] === 'db' && !empty($settings['dbTable']) && $entryId) {
-            Spry::db($settings['dbMeta'])->update($settings['dbTable'], ['current' => $current], ['id' => $entryId]);
+            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+                Spry::db($settings['dbMeta'])->update($settings['dbTable'], ['current' => $current], ['id' => $entryId]);
+            }
         }
     }
 
     /**
      * Checks for Rate limits that have expired and clears them
      *
-     * @param $settings
-     *
      * @access private
      *
      * @return void
      */
-    private static function resetLimits($settings)
+    public static function resetLimits()
     {
+        $settings = self::getSettings();
+
         if ($settings['driver'] === 'file' && !empty($settings['fileDirectory']) && is_dir($settings['fileDirectory'])) {
             $files = glob(rtrim($settings['fileDirectory'], '/').'/*');
 
@@ -269,7 +265,9 @@ class SpryRateLimits
             if (empty($settings['excludeTests'])) {
                 $settings['dbMeta']['excludeTestData'] = true;
             }
-            Spry::db($settings['dbMeta'])->delete($settings['dbTable'], ['expires[<=]' => time()]);
+            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+                Spry::db($settings['dbMeta'])->delete($settings['dbTable'], ['expires[<=]' => time()]);
+            }
         }
     }
 
