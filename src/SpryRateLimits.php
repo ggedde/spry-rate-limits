@@ -49,6 +49,11 @@ class SpryRateLimits
 
                 return $config;
             });
+
+            $tables = Spry::db()->getTables();
+            if (is_array($tables) && !in_array($settings['dbTable'], $tables, true)) {
+                return; // Don't Run until the Table has been built.
+            }
         }
 
         // Don't run Rate Limits for the cli or any Background Processes
