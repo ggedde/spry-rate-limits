@@ -119,6 +119,41 @@ class SpryRateLimits
     }
 
     /**
+     * Checks for Rate limits that have expired and clears them
+     *
+     * @access public
+     *
+     * @return void
+     */
+    public static function resetLimits()
+    {
+        $settings = self::getSettings();
+
+        if ($settings['driver'] === 'file' && !empty($settings['fileDirectory']) && is_dir($settings['fileDirectory'])) {
+            $files = glob(rtrim($settings['fileDirectory'], '/').'/*');
+
+            if (!empty($files)) {
+                foreach ($files as $file) {
+                    list($key, $keyValue, $path, $expires) = explode(':', basename($file));
+
+                    if (empty($expires) || intval($expires) <= time()) {
+                        unlink($file);
+                    }
+                }
+            }
+        }
+
+        if ($settings['driver'] === 'db' && !empty($settings['dbTable'])) {
+            if (empty($settings['excludeTests'])) {
+                $settings['dbMeta']['excludeTestData'] = true;
+            }
+            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+                Spry::db($settings['dbMeta'])->delete($settings['dbTable'], ['expires[<=]' => time()]);
+            }
+        }
+    }
+
+    /**
      * Checks and Validates the Rate limit
      *
      * @param array  $rateLimit
@@ -232,41 +267,6 @@ class SpryRateLimits
         if ($settings['driver'] === 'db' && !empty($settings['dbTable']) && $entryId) {
             if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
                 Spry::db($settings['dbMeta'])->update($settings['dbTable'], ['current' => $current], ['id' => $entryId]);
-            }
-        }
-    }
-
-    /**
-     * Checks for Rate limits that have expired and clears them
-     *
-     * @access private
-     *
-     * @return void
-     */
-    public static function resetLimits()
-    {
-        $settings = self::getSettings();
-
-        if ($settings['driver'] === 'file' && !empty($settings['fileDirectory']) && is_dir($settings['fileDirectory'])) {
-            $files = glob(rtrim($settings['fileDirectory'], '/').'/*');
-
-            if (!empty($files)) {
-                foreach ($files as $file) {
-                    list($key, $keyValue, $path, $expires) = explode(':', basename($file));
-
-                    if (empty($expires) || intval($expires) <= time()) {
-                        unlink($file);
-                    }
-                }
-            }
-        }
-
-        if ($settings['driver'] === 'db' && !empty($settings['dbTable'])) {
-            if (empty($settings['excludeTests'])) {
-                $settings['dbMeta']['excludeTestData'] = true;
-            }
-            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
-                Spry::db($settings['dbMeta'])->delete($settings['dbTable'], ['expires[<=]' => time()]);
             }
         }
     }
