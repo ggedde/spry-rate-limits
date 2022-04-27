@@ -72,18 +72,24 @@ class SpryRateLimits
     /**
      * Runs the Default Global Rate Limits
      *
+     * @param array $route
+     *
      * @access public
      *
      * @return void
      */
-    public static function runDefaultRateLimit()
+    public static function runDefaultRateLimit($route = [])
     {
-        $route = Spry::getRoute();
-        $routePath = !empty($route['path']) ? $route['path'] : '_default_';
-        $keys = Spry::runFilter('spryRateLimitKeys', ['ip' => self::getIp()]);
-        $settings = self::getSettings();
-        if (!empty($settings['default'])) {
-            self::runRateLimit($settings['default'], $keys, $settings, $routePath);
+        $limits = !empty($route['limits']) ? $route['limits'] : null;
+        if (!isset($route['limits'])) {
+            $settings = self::getSettings();
+            $limits = $settings['default'];
+        }
+
+        if (!empty($limits)) {
+            $routePath = !empty($route['path']) ? $route['path'] : '_default_';
+            $keys = Spry::runFilter('spryRateLimitKeys', ['ip' => self::getIp()]);
+            self::runRateLimit($limits, $keys, $settings, $routePath);
         }
     }
 
@@ -146,15 +152,28 @@ class SpryRateLimits
             return; // no Limits return
         }
 
-        $by = !empty($rateLimit['by']) ? $rateLimit['by'] : 'ip';
-
-        $expires = time() + intval($within);
-        $current = 0;
+        if (!isset($rateLimit['by'])) {
+            $rateLimit['by'] = 'ip';
+        }
+        if (!is_array($rateLimit['by'])) {
+            if (is_string($rateLimit['by'])) {
+                $rateLimit['by'] = [$rateLimit['by']];
+            } else {
+                $rateLimit['by'] = ['ip'];
+            }
+        }
+        foreach ($rateLimit['by'] as $by) {
+            if (!empty($keys[$by])) {
+                break;
+            }
+        }
 
         if (empty($keys[$by])) {
             Spry::stop(71);
         }
 
+        $expires = time() + intval($within);
+        $current = 0;
         $file = '';
         $entryId = 0;
 
@@ -216,6 +235,8 @@ class SpryRateLimits
 
     /**
      * Checks for Rate limits that have expired and clears them
+     *
+     * @param $settings
      *
      * @access private
      *
