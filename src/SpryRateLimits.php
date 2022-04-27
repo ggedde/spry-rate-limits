@@ -147,7 +147,7 @@ class SpryRateLimits
             if (empty($settings['excludeTests'])) {
                 $settings['dbMeta']['excludeTestData'] = true;
             }
-            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+            if (in_array(Spry::config()->db['prefix'].$settings['dbTable'], Spry::db()->getTables(), true)) {
                 Spry::db($settings['dbMeta'])->delete($settings['dbTable'], ['expires[<=]' => time()]);
             }
         }
@@ -239,7 +239,7 @@ class SpryRateLimits
         }
 
         if ($settings['driver'] === 'db' && !empty($settings['dbTable'])) {
-            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+            if (in_array(Spry::config()->db['prefix'].$settings['dbTable'], Spry::db()->getTables(), true)) {
                 $entry = Spry::db($settings['dbMeta'])->get($settings['dbTable'], ['id', 'current', 'expires'], ['key_name' => $by, 'key_value' => $keys[$by], 'path' => $routePath, 'expires[>]' => time()]);
 
                 if (!empty($entry['id'])) {
@@ -265,7 +265,7 @@ class SpryRateLimits
         }
 
         if ($settings['driver'] === 'db' && !empty($settings['dbTable']) && $entryId) {
-            if (in_array($settings['dbTable'], Spry::db()->getTables(), true)) {
+            if (in_array(Spry::config()->db['prefix'].$settings['dbTable'], Spry::db()->getTables(), true)) {
                 Spry::db($settings['dbMeta'])->update($settings['dbTable'], ['current' => $current], ['id' => $entryId]);
             }
         }
